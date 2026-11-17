@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233f7d55'/%3E%3Cpath d='M16 5l6 9h-4l5 7h-5v6h-4v-6H9l5-7h-4z' fill='%23a8e0b8'/%3E%3C/svg%3E" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>过程式园林种植与实时漫游系统</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene"></canvas>
+
+      <div id="topbar">
+        <div class="brand">过程式园林 · 实时种植漫游</div>
+        <div class="top-group">
+          <span class="top-label">季节</span>
+          <div class="seg" id="seasonSeg">
+            <button data-season="0" class="active">春</button>
+            <button data-season="1">夏</button>
+            <button data-season="2">秋</button>
+            <button data-season="3">冬</button>
+          </div>
+          <label class="check"><input type="checkbox" id="autoSeason" /> 自动轮播</label>
+        </div>
+        <div class="top-group">
+          <span class="top-label">生长年限</span>
+          <div class="seg" id="ageSeg">
+            <button data-age="1">1年</button>
+            <button data-age="3" class="active">3年</button>
+            <button data-age="5">5年</button>
+            <button data-age="10">10年</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel">
+        <div class="tabs">
+          <button class="tab active" data-tab="species">树种参数</button>
+          <button class="tab" data-tab="plant">场地种植</button>
+          <button class="tab" data-tab="prune">修剪</button>
+          <button class="tab" data-tab="walk">漫游</button>
+        </div>
+
+        <div class="tab-body" data-body="species">
+          <div class="field">
+            <label>树种</label>
+            <select id="speciesSelect"></select>
+          </div>
+          <div id="paramList"></div>
+          <div class="field-row">
+            <button id="applyParams" class="primary">应用到全场树木</button>
+            <button id="resetParams">重置预设</button>
+          </div>
+          <div class="preview-wrap">
+            <div class="preview-title">生成预览（当前参数）</div>
+            <canvas id="preview"></canvas>
+          </div>
+        </div>
+
+        <div class="tab-body" data-body="plant" hidden>
+          <div class="field">
+            <label>笔刷半径 <b id="brushRadiusVal">6 m</b></label>
+            <input type="range" id="brushRadius" min="1" max="15" step="0.5" value="6" />
+          </div>
+          <div class="field">
+            <label>种植疏密 <b id="brushDensityVal">0.6</b></label>
+            <input type="range" id="brushDensity" min="0.05" max="1" step="0.05" value="0.6" />
+          </div>
+          <div class="field-row">
+            <button id="brushPlant" class="primary active">种植笔刷</button>
+            <button id="brushErase">擦除笔刷</button>
+          </div>
+          <div class="hint">在场地平面图上按住左键拖动即可种树 / 擦除，建筑阴影内自动选择稀枝变体。</div>
+          <div class="field-row">
+            <button id="randomForest">随机混交林 1 万棵</button>
+            <button id="clearForest" class="danger">清空场地</button>
+          </div>
+          <div class="stat" id="forestStat">场地树木：0</div>
+        </div>
+
+        <div class="tab-body" data-body="prune" hidden>
+          <div class="hint">
+            进入修剪模式后，点击任意枝条即可从该位置剪除整段分枝。<br />
+            切换到下一个季节时，剪口会自动萌发 2~3 根侧枝（最多萌发三轮）。
+          </div>
+          <div class="field-row">
+            <button id="pruneToggle" class="primary">进入修剪模式</button>
+          </div>
+          <div class="stat" id="pruneStat">已修剪：0 棵 / 剪口：0 个</div>
+        </div>
+
+        <div class="tab-body" data-body="walk" hidden>
+          <div class="hint">
+            进入第一人称漫游，指针锁定后：<br />
+            <b>W A S D</b> 移动 · <b>Shift</b> 加速 · 鼠标转向 · <b>Esc</b> 退出
+          </div>
+          <div class="field-row">
+            <button id="walkToggle" class="primary">进入实时漫游</button>
+          </div>
+          <div class="field">
+            <label>行走速度 <b id="walkSpeedVal">4 m/s</b></label>
+            <input type="range" id="walkSpeed" min="1" max="12" step="0.5" value="4" />
+          </div>
+        </div>
+      </div>
+
+      <div id="fps">FPS: --</div>
+      <div id="modeTip"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

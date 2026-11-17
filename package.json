@@ -1,0 +1,24 @@
+{
+  "name": "procedural-garden",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test:unit": "tsx scripts/test-lsystem.ts",
+    "test:smoke": "tsx scripts/smoke-lite.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.169.0",
+    "puppeteer-core": "^23.4.1",
+    "tsx": "^4.23.15",
+    "typescript": "~5.5.4",
+    "vite": "^5.4.8"
+  }
+}
