@@ -1,0 +1,13 @@
+{
+  "name": "cable-strander",
+  "version": "1.0.0",
+  "description": "电缆同心绞结构设计与三维查看工具（工艺科）",
+  "private": true,
+  "scripts": {
+    "test": "node test/core.test.js",
+    "test:browser": "node test/cdp-probe.js",
+    "test:fps": "node test/fps-compare.js",
+    "test:e2e": "node test/e2e-warnings.js",
+    "test:svg": "node test/svg-export.test.js"
+  }
+}

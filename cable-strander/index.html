@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电缆绞线结构设计与三维查看工具 · 工艺科</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">⌁</span>
+    <div>
+      <h1>电缆绞线结构设计与三维查看</h1>
+      <p>同心绞 · 节距比 / 绞入率 / 填充系数 · 紧压扇形 · 螺旋三维</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="btnPresetBig" class="btn ghost" title="1027 根（18 层）压力测试结构">载入千丝样例</button>
+    <button id="btnPrint" class="btn ghost">打印工艺单</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ============ 左：参数与计算结果 ============ -->
+  <section class="panel input-panel">
+    <h2 class="panel-title">结构参数</h2>
+
+    <div class="form-grid">
+      <label>标称导体截面 (mm²)
+        <input type="number" id="inpArea" value="240" min="0.1" step="0.1">
+      </label>
+      <label>单丝直径 d (mm)
+        <input type="number" id="inpD" value="2.25" min="0.01" step="0.01">
+      </label>
+      <label>层数（不含中心）
+        <input type="number" id="inpLayers" value="4" min="0" max="60" step="1">
+      </label>
+      <label>第一层绞向
+        <select id="inpFirstDir">
+          <option value="Z" selected>Z 绞（右向）</option>
+          <option value="S">S 绞（左向）</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="check-row">
+      <label class="check"><input type="checkbox" id="inpCompacted"> <span>紧压绞（单丝压成扇形）</span></label>
+      <label class="check compact-opt" id="compactOptWrap">目标填充系数 K
+        <input type="number" id="inpCompactK" value="0.90" min="0.5" max="0.99" step="0.01" disabled>
+      </label>
+    </div>
+
+    <div class="btn-row">
+      <button id="btnCalc" class="btn primary">计算 / 生成结构</button>
+      <button id="btnSuggest" class="btn">按截面估算层数</button>
+    </div>
+
+    <h3 class="sub-title">每层参数（可编辑根数与节距比）</h3>
+    <div class="table-wrap">
+      <table id="layerInputTable">
+        <thead>
+          <tr><th>层</th><th>根数</th><th>节距比 m</th><th>绞向</th><th>校核</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="warnings" class="warnings" hidden></div>
+
+    <h3 class="sub-title">计算结果汇总</h3>
+    <div id="summary" class="summary-grid"></div>
+  </section>
+
+  <!-- ============ 右：三维 / 截面 ============ -->
+  <section class="panel view-panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="three">三维螺旋结构</button>
+      <button class="tab" data-tab="section">横截面剖切</button>
+    </div>
+
+    <div class="tab-page" id="tab-three">
+      <div class="view-toolbar">
+        <label>显示长度 <select id="selLength">
+          <option value="0.5">0.5 节距</option>
+          <option value="1" selected>1 节距</option>
+          <option value="2">2 节距</option>
+        </select></label>
+        <label class="check"><input type="checkbox" id="chkEnvelope"> <span>外轮廓</span></label>
+        <label class="check"><input type="checkbox" id="chkAutoRotate" checked> <span>自动旋转</span></label>
+        <label class="check"><input type="checkbox" id="chkClip"> <span>剖切平面</span></label>
+        <label class="clip-row">剖切位置
+          <input type="range" id="clipPos" min="0" max="100" value="50" disabled>
+        </label>
+        <span class="fps" id="fpsBadge">— fps</span>
+      </div>
+      <div id="threeHost" class="view-host"></div>
+      <p class="hint">鼠标左键旋转 · 滚轮缩放 · 右键平移；不同层以颜色区分，Z 绞与 S 绞螺旋方向相反。</p>
+    </div>
+
+    <div class="tab-page" id="tab-section" hidden>
+      <div class="view-toolbar">
+        <label>剖切位置（沿电缆长度）
+          <input type="range" id="sectionPos" min="0" max="100" value="50">
+        </label>
+        <span class="clip-val" id="sectionPosVal">50%</span>
+        <label class="check"><input type="checkbox" id="secCompactView"> <span>按紧压扇形绘制</span></label>
+        <button class="btn small" id="btnExportSvg">导出 SVG</button>
+      </div>
+      <div id="sectionHost" class="view-host">
+        <canvas id="sectionCanvas"></canvas>
+      </div>
+      <p class="hint" id="sectionHint">截面按当前螺旋相位实时排列；紧压绞下每层单丝呈扇形并贴合。</p>
+    </div>
+  </section>
+</main>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="js/strander-core.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

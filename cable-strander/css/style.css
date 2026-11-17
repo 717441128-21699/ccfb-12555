@@ -1,0 +1,150 @@
+/* 电缆绞线设计工具 —— 工业风界面 */
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --ink: #1d2733;
+  --ink-2: #55636f;
+  --line: #d6dde5;
+  --brand: #0f3a5f;
+  --brand-2: #15517f;
+  --accent: #e08a1e;
+  --ok: #1f8a4c;
+  --warn: #b7791f;
+  --bad: #c0392b;
+  --chip: #eef3f8;
+  --shadow: 0 2px 10px rgba(15, 40, 70, .08);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 13.5px/1.55 "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+}
+
+/* ---- 顶栏 ---- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(100deg, var(--brand), var(--brand-2));
+  color: #fff; padding: 10px 20px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  font-size: 30px; color: var(--accent);
+  background: rgba(255,255,255,.12); border-radius: 8px;
+  width: 44px; height: 44px; display: grid; place-items: center;
+}
+.topbar h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: .5px; }
+.topbar p { margin: 2px 0 0; font-size: 12px; opacity: .82; }
+.top-actions { display: flex; gap: 8px; }
+
+/* ---- 布局 ---- */
+.layout {
+  display: grid; grid-template-columns: minmax(430px, 460px) 1fr;
+  gap: 14px; padding: 14px; align-items: start;
+  max-width: 1700px; margin: 0 auto;
+}
+.panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: var(--shadow); padding: 16px;
+}
+.view-panel { padding: 0; overflow: hidden; min-height: 720px; display: flex; flex-direction: column; }
+
+/* ---- 表单 ---- */
+.panel-title {
+  margin: 0 0 12px; font-size: 15px; color: var(--brand);
+  border-left: 4px solid var(--accent); padding-left: 9px;
+}
+.sub-title { margin: 18px 0 8px; font-size: 13.5px; color: var(--brand-2); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+input[type=number], select {
+  font: inherit; padding: 7px 9px; border: 1px solid var(--line);
+  border-radius: 6px; background: #fbfcfd; color: var(--ink); width: 100%;
+}
+input[type=number]:focus, select:focus { outline: 2px solid rgba(21,81,127,.25); border-color: var(--brand-2); }
+input:disabled { background: #eef0f3; color: #93a0ab; }
+.check-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; align-items: center; }
+.check { flex-direction: row; align-items: center; gap: 6px; font-weight: 500; color: var(--ink); }
+.compact-opt { flex-direction: row; align-items: center; gap: 6px; }
+.compact-opt input { width: 84px; }
+
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+.btn {
+  font: inherit; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: #f5f7fa; color: var(--ink); font-weight: 600;
+}
+.btn:hover { background: #e9eef4; }
+.btn.primary { background: var(--brand-2); color: #fff; border-color: var(--brand-2); }
+.btn.primary:hover { background: var(--brand); }
+.btn.ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); }
+.btn.ghost:hover { background: rgba(255,255,255,.22); }
+.btn.small { padding: 5px 10px; font-size: 12px; }
+
+/* ---- 层参数表 ---- */
+.table-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: auto; max-height: 300px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); }
+th { background: #f2f6fa; color: var(--brand); position: sticky; top: 0; z-index: 1; font-weight: 700; }
+td input, td select { padding: 4px 6px; text-align: center; }
+tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.badge.ok { background: #e3f5ea; color: var(--ok); }
+.badge.loose { background: #fdf1dc; color: var(--warn); }
+.badge.tight { background: #fbe3e0; color: var(--bad); }
+
+/* ---- 告警 ---- */
+.warnings {
+  margin-top: 12px; border: 1px solid #f0c9c2; background: #fdf3f2;
+  border-radius: 8px; padding: 10px 12px;
+}
+.warnings h4 { margin: 0 0 6px; color: var(--bad); font-size: 13px; }
+.warnings ul { margin: 0; padding-left: 18px; }
+.warnings li { color: #8e3b32; font-size: 12.5px; margin: 3px 0; }
+
+/* ---- 汇总 ---- */
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kv {
+  background: var(--chip); border-radius: 8px; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.kv b { font-size: 15px; color: var(--brand); }
+.kv span { font-size: 11.5px; color: var(--ink-2); }
+.kv.wide { grid-column: 1 / -1; }
+
+/* ---- 结果明细表 ---- */
+.detail-table { margin-top: 10px; max-height: 260px; }
+.detail-table td.num { font-variant-numeric: tabular-nums; }
+
+/* ---- 右侧视图 ---- */
+.tabs { display: flex; border-bottom: 1px solid var(--line); background: #f7f9fc; }
+.tab {
+  flex: 1; padding: 12px; font: inherit; font-weight: 700; cursor: pointer;
+  border: none; background: none; color: var(--ink-2); border-bottom: 3px solid transparent;
+}
+.tab.active { color: var(--brand-2); border-bottom-color: var(--accent); background: #fff; }
+.view-toolbar {
+  display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); background: #fbfcfe;
+}
+.view-toolbar label { flex-direction: row; align-items: center; gap: 6px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.view-toolbar select { width: auto; padding: 5px 8px; }
+input[type=range] { width: 130px; }
+.clip-val { font-weight: 700; color: var(--brand-2); min-width: 42px; }
+.fps { margin-left: auto; font-weight: 700; color: var(--ok); font-variant-numeric: tabular-nums; }
+.view-host { flex: 1; position: relative; min-height: 560px; background: #f4f7fa; }
+#threeHost canvas { display: block; }
+#sectionHost { display: grid; place-items: center; padding: 10px; }
+#sectionCanvas { max-width: 100%; max-height: 640px; }
+.hint { margin: 0; padding: 8px 14px; font-size: 11.5px; color: var(--ink-2); background: #fbfcfe; border-top: 1px solid var(--line); }
+
+/* ---- 打印工艺单 ---- */
+@media print {
+  .topbar, .view-panel, .btn-row, .view-toolbar, .hint { display: none !important; }
+  .layout { display: block; }
+  .panel { box-shadow: none; border: none; }
+  body { background: #fff; }
+}
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+}
