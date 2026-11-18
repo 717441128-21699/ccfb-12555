@@ -1,0 +1,19 @@
+{
+  "name": "cable-stranding-tool",
+  "version": "1.0.0",
+  "description": "电缆绞线结构设计与三维查看工具",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "three": "^0.160.0"
+  }
+}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电缆绞线结构设计与三维查看</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --panel: #ffffff; --line: #dde3e8; --ink: #1f2a33;
+    --muted: #6b7a86; --accent: #0b6bcb; --ok: #1a7f37; --warn: #b25e09; --err: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 "Microsoft YaHei", "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+  header { background: #14324e; color: #fff; padding: 10px 18px; display: flex; align-items: baseline; gap: 14px; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header span { font-size: 12px; color: #9fb8cc; }
+  .layout { display: grid; grid-template-columns: 380px 1fr; gap: 10px; padding: 10px; height: calc(100vh - 46px); }
+  .col { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .card h2 { font-size: 13px; margin: 0 0 10px; color: var(--muted); font-weight: 600; letter-spacing: 1px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  input, select { width: 100%; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; }
+  input:focus, select:focus { outline: 2px solid #0b6bcb44; border-color: var(--accent); }
+  .btn { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font: inherit; cursor: pointer; }
+  .btn.ghost { background: #eef3f7; color: var(--ink); border: 1px solid var(--line); }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: #f0f5f9; border-radius: 6px; padding: 7px 10px; }
+  .stat b { display: block; font-size: 16px; }
+  .stat span { font-size: 11px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: right; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; text-align: center; background: #f7fafc; }
+  td.c, th.c { text-align: center; }
+  td input { width: 58px; padding: 2px 4px; text-align: right; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 11px; }
+  .tag.ok { background: #e3f3e8; color: var(--ok); }
+  .tag.warn { background: #fdf0e0; color: var(--warn); }
+  .tag.error { background: #fbe4e1; color: var(--err); }
+  .msgs { margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+  .msgs li { padding: 4px 8px; border-radius: 5px; margin-bottom: 4px; }
+  .msgs li.warn { background: #fdf0e0; color: var(--warn); }
+  .msgs li.error { background: #fbe4e1; color: var(--err); }
+  .viewwrap { display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .tabs button { border: 1px solid var(--line); background: #eef3f7; border-radius: 6px 6px 0 0; padding: 6px 16px; font: inherit; cursor: pointer; }
+  .tabs button.on { background: var(--panel); border-bottom-color: var(--panel); font-weight: 600; }
+  .view { flex: 1; min-height: 0; position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 0 6px 6px 6px; overflow: hidden; }
+  .view canvas { display: block; }
+  .hud { position: absolute; top: 8px; left: 10px; font-size: 12px; color: var(--muted); background: #ffffffd9; padding: 4px 8px; border-radius: 5px; pointer-events: none; }
+  .ctl { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; gap: 14px; align-items: center; background: #ffffffe6; padding: 7px 12px; border-radius: 6px; font-size: 12px; border: 1px solid var(--line); }
+  .ctl input[type=range] { flex: 1; }
+  .hidden { display: none !important; }
+  .check { font-size: 12px; color: var(--muted); }
+  .check b { color: var(--ok); }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/controls/OrbitControls.js": "./vendor/OrbitControls.js" } }
+</script>
+</head>
+<body>
+<header>
+  <h1>电缆绞线结构设计与三维查看</h1>
+  <span>同心绞排层 · 节距比 / 绞入率 / 填充系数 · 三维螺旋与任意截面剖视 · 紧压扇形单丝</span>
+</header>
+<div class="layout">
+  <div class="col">
+    <div class="card">
+      <h2>设计输入</h2>
+      <div class="grid2">
+        <div><label>导体标称截面 (mm²)</label><input id="area" type="number" value="240" step="any" min="0"></div>
+        <div><label>单丝直径 d (mm)</label><input id="wireDia" type="number" value="2.87" step="any" min="0"></div>
+        <div><label>绞合层数 K(不含中心丝)</label><input id="layers" type="number" value="3" step="1" min="1" max="30"></div>
+        <div><label>导体材料</label>
+          <select id="material"><option value="copper">铜 (8.89)</option><option value="aluminum">铝 (2.703)</option><option value="alloy">铝合金 (2.80)</option></select></div>
+        <div><label>绞合方式</label>
+          <select id="mode"><option value="round">圆线同心绞</option><option value="compact">紧压绞(扇形单丝)</option></select></div>
+        <div id="compRow" class="hidden"><label>紧压系数 κ</label><input id="compaction" type="number" value="0.90" step="0.01" min="0.8" max="1"></div>
+        <div><label>最外层绞向</label>
+          <select id="outerDir"><option value="-1">左向 (S)</option><option value="1">右向 (Z)</option></select></div>
+        <div><label>节距比基准</label>
+          <select id="ratioBasis"><option value="pitch">节圆直径</option><option value="outer">层外径</option></select></div>
+        <div><label>最外层节距比 m</label><input id="layRatioOuter" type="number" value="12" step="any" min="1"></div>
+        <div><label>内层节距比递增 Δm</label><input id="layRatioStep" type="number" value="2" step="any"></div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button class="btn" id="run">计算并生成</button>
+        <button class="btn ghost" id="copy">复制结果</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>汇总</h2>
+      <div class="summary" id="summary"></div>
+    </div>
+
+    <div class="card hidden" id="msgCard"><ul class="msgs" id="msgs"></ul></div>
+
+    <div class="card">
+      <h2>分层参数(节距比可逐层修改)</h2>
+      <div style="overflow-x:auto"><table id="layerTable">
+        <thead><tr><th>层</th><th>根数</th><th>节圆Ø</th><th>节距比</th><th>节距</th><th class="c">绞向</th><th>绞入率</th><th class="c">状态</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+
+    <div class="card check" id="checkCard"></div>
+  </div>
+
+  <div class="col viewwrap">
+    <div class="tabs">
+      <button id="tab3d" class="on">三维结构</button>
+      <button id="tab2d">截面剖视</button>
+    </div>
+    <div class="view" id="view3d">
+      <div class="hud" id="fps">— fps</div>
+      <div class="ctl">
+        <label style="margin:0"><input type="checkbox" id="clipOn" style="width:auto"> 剖切</label>
+        <span>剖面位置 z</span><input type="range" id="clipZ" min="0" max="1000" value="500">
+        <span>显示长度</span><input type="range" id="lenScale" min="50" max="300" value="150" style="max-width:140px"><span id="lenVal">1.5 节距</span>
+        <select id="quality" style="width:auto"><option value="high">高画质</option><option value="mid" selected>中画质</option><option value="low">低画质</option></select>
+      </div>
+    </div>
+    <div class="view hidden" id="view2d">
+      <canvas id="sectionCanvas"></canvas>
+      <div class="ctl"><span>剖面位置 z</span><input type="range" id="secZ" min="0" max="1000" value="0"><span id="secZVal"></span></div>
+    </div>
+  </div>
+</div>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
