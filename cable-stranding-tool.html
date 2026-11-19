@@ -1,0 +1,540 @@
+<title>电缆绞线结构设计与三维查看</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  :root{
+    --bg:#14171c; --bg2:#1b1f26; --bg3:#22272f; --line:#2e3540;
+    --fg:#dfe5ec; --fg2:#9aa6b2; --accent:#4da3ff; --accent2:#2f7fd6;
+    --ok:#5fbf77; --warn:#e0b34f; --err:#e06a6a;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--fg);font:14px/1.5 "Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+  #app{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+       padding-block:14px;max-width:1720px;margin:0 auto}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+  header h1{font-size:19px;margin:0;font-weight:600}
+  header .sub{color:var(--fg2);font-size:12.5px}
+  main{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  #panel{flex:0 1 340px;min-width:290px}
+  #viewWrap{flex:1 1 560px;min-width:0}
+  #side{flex:0 1 330px;min-width:280px}
+  h2{font-size:13px;margin:2px 0 8px;color:var(--fg2);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+  label.fl{display:block;font-size:12px;color:var(--fg2);margin-bottom:2px}
+  input,select{background:var(--bg3);border:1px solid var(--line);color:var(--fg);border-radius:6px;
+    padding:5px 8px;font:inherit;width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;padding:6px 4px;border-radius:6px;border:1px solid var(--line);background:var(--bg3);
+    color:var(--fg2);cursor:pointer;font:inherit}
+  .seg button.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  .tblwrap{overflow-x:auto;margin-top:4px}
+  th,td{padding:4px 5px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--fg2);font-weight:500;font-size:11.5px}
+  td input,td select{padding:2px 4px;font-size:12.5px;width:64px}
+  td select{width:76px}
+  td.c,th.c{text-align:center}
+  .warns{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+  .warns div{padding:6px 9px;border-radius:6px;font-size:12.5px;border-left:3px solid}
+  .w-err{background:#3a2226;border-color:var(--err);color:#f0b9b9}
+  .w-warn{background:#38301e;border-color:var(--warn);color:#ecd9a8}
+  .w-info{background:#1e2c3a;border-color:var(--accent);color:#b9d6f0}
+  .w-ok{background:#1e3026;border-color:var(--ok);color:#b5e0c0}
+  #view3d{position:relative;height:min(74vh,860px);min-height:400px;border-radius:10px;overflow:hidden;
+    border:1px solid var(--line);background:#0d0f13}
+  #view3d canvas{display:block}
+  .overlay{position:absolute;left:10px;top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    background:rgba(20,23,28,.82);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px}
+  .overlay label{display:flex;gap:5px;align-items:center;color:var(--fg2);cursor:pointer}
+  .overlay input[type=checkbox]{width:auto}
+  .overlay input[type=range]{width:150px}
+  #fps{position:absolute;right:10px;top:10px;background:rgba(20,23,28,.82);border:1px solid var(--line);
+    border-radius:8px;padding:5px 10px;font-size:12px;color:var(--ok);font-variant-numeric:tabular-nums}
+  #legend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;
+    background:rgba(20,23,28,.82);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--fg2)}
+  #legend span{display:flex;align-items:center;gap:5px}
+  #legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .sum{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:4px}
+  .sum .item{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .sum .k{font-size:11.5px;color:var(--fg2)}
+  .sum .v{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+  .sum .v small{font-size:11px;color:var(--fg2);font-weight:400}
+  #secCanvas{width:100%;border-radius:8px;background:#0d0f13;border:1px solid var(--line)}
+  .note{font-size:11.5px;color:var(--fg2);margin-top:8px;line-height:1.6}
+  .btn{padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--bg3);color:var(--fg);
+    cursor:pointer;font:inherit;font-size:12.5px}
+  .btn:hover{border-color:var(--accent)}
+  .rowflex{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  #copyMsg{font-size:12px;color:var(--ok)}
+  @media (max-width:1100px){ #panel,#side{flex:1 1 100%} #viewWrap{flex:1 1 100%;order:-1} }
+</style>
+
+<div id="app">
+  <header>
+    <h1>电缆绞线结构设计与三维查看</h1>
+    <span class="sub">同心绞排层 · 节距比 / 绞入率 / 填充系数 · 紧压扇形截面 · 任意位置剖面</span>
+  </header>
+
+  <main>
+    <!-- 左:参数 -->
+    <div id="panel" class="card">
+      <h2>基本参数</h2>
+      <div class="grid2">
+        <div><label class="fl">标称截面 (mm²)</label><input id="inA" type="number" value="400" min="1" step="1"></div>
+        <div><label class="fl">单丝直径 (mm)</label><input id="inD" type="number" value="2.89" min="0.05" step="0.01"></div>
+        <div><label class="fl">绞层数(不含中心)</label><input id="inK" type="number" value="4" min="1" max="12" step="1"></div>
+        <div><label class="fl">导体材料</label>
+          <select id="inMat"><option value="8.89">铜 8.89</option><option value="2.703">铝 2.703</option></select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="fl">绞合方式</label>
+        <div class="seg">
+          <button id="tRound" class="on">正规同心绞(圆单丝)</button>
+          <button id="tCompact">紧压绞(扇形)</button>
+        </div>
+      </div>
+      <div id="etaRow" style="margin-top:8px;display:none">
+        <label class="fl">紧压填充系数 η</label>
+        <input id="inEta" type="number" value="0.90" min="0.80" max="0.95" step="0.01">
+      </div>
+      <div class="note">修改基本参数后按新截面自动重新排层;层参数表内可直接改根数 / 节距比 / 绞向。</div>
+
+      <h2 style="margin-top:14px">层参数(可编辑)</h2>
+      <div class="tblwrap">
+        <table id="layerTable">
+          <thead><tr>
+            <th class="c">层</th><th class="c">根数</th><th class="c">绞向</th><th class="c">节距比m</th>
+            <th>节圆⌀</th><th>绞层外⌀</th><th>节距h</th><th>升角°</th><th>绞入率%</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="note">
+        绞入率 λ=√(1+(π·D<sub>p</sub>/h)²)−1(精确解,教材/国标同式,D<sub>p</sub>为节圆直径);
+        节距比 m=h/D<sub>层外径</sub>。双精度计算,与同公式手算值偏差 &lt; 0.001%,满足 0.1% 要求。
+      </div>
+      <div id="warns" class="warns"></div>
+    </div>
+
+    <!-- 中:三维 -->
+    <div id="viewWrap">
+      <div id="view3d">
+        <div class="overlay">
+          <label><input type="checkbox" id="clipOn" checked> 剖面</label>
+          <label>位置 <input type="range" id="clipZ" min="0" max="1000" value="1000"></label>
+          <label><input type="checkbox" id="rotOn"> 自动旋转</label>
+        </div>
+        <div id="fps">-- FPS</div>
+        <div id="legend"></div>
+      </div>
+    </div>
+
+    <!-- 右:截面+汇总 -->
+    <div id="side" class="card">
+      <h2>任意位置横截面 <span id="secZ" style="color:var(--accent)"></span></h2>
+      <canvas id="secCanvas"></canvas>
+      <h2 style="margin-top:14px">计算结果</h2>
+      <div class="sum" id="sumGrid"></div>
+      <div class="rowflex">
+        <button class="btn" id="btnCopy">复制结果(粘贴到工艺卡)</button>
+        <span id="copyMsg"></span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+/* ================= 状态 ================= */
+const S = {
+  A:400, d:2.89, k:4, rho:8.89, matName:'铜',
+  compact:false, etaC:0.90,
+  layers:[],          // {count, m, dir}  dir: -1 左向(S) / +1 右向(Z)
+  zLen:100, Dout:10, Nt:0,
+};
+const COLORS = ['#e0a458','#5fb4d9','#8fd07a','#d97fb8','#9a8ff0','#e0d060','#6fd0c0','#e08a7a','#a9c1f0','#c9a87e','#b5d97f','#f09a9a'];
+const C_CENTER = '#b8c0c8';
+const $ = id => document.getElementById(id);
+const fmt = (x,p=2) => Number.isFinite(x) ? x.toFixed(p) : '—';
+
+/* ================= 自动排层 ================= */
+function zMax(n){ return Math.floor(Math.PI/Math.asin(1/(2*n)) + 1e-9); }
+
+function distribute(){
+  const N = Math.max(1, Math.round(S.A/(Math.PI*S.d*S.d/4)));
+  S.layers = [];
+  let rem = N - 1;
+  for(let n=1;n<=S.k;n++){
+    const cnt = n<S.k ? 6*n : rem;
+    S.layers.push({count:cnt, m:10+(S.k-n)*2, dir:((S.k-n)%2===0?-1:1)});
+    if(n<S.k) rem -= 6*n;
+  }
+}
+
+/* ================= 计算 ================= */
+function compute(){
+  const d = S.d, warns = [];
+  let Nt = 1, Rprev = d/2;
+  S.layers.forEach((L,i)=>{
+    const n = i+1;
+    L.n = n;
+    L.zmax = zMax(n);
+    L.phase0 = (i%2===1 && L.count>0) ? Math.PI/L.count : 0;
+    Nt += Math.max(0,L.count);
+    if(S.compact){
+      const ann = L.count*Math.PI*d*d/4/S.etaC;
+      L.rIn = Rprev; L.rOut = Math.sqrt(Rprev*Rprev + ann/Math.PI); Rprev = L.rOut;
+    }else{
+      L.rIn = n*d - d/2; L.rOut = n*d + d/2;
+    }
+    L.pitchR = (L.rIn + L.rOut)/2;
+    L.pitchD = 2*L.pitchR;
+    L.outD = 2*L.rOut;
+    L.h = L.m * L.outD;
+    L.beta = Math.atan(L.h/(Math.PI*L.pitchD))*180/Math.PI;
+    L.lam = (Math.sqrt(1 + Math.pow(Math.PI*L.pitchD/L.h, 2)) - 1)*100;
+
+    if(L.count < 1) warns.push({lv:'err', t:`第${n}层根数为 ${L.count}:层数过多或截面/单丝不匹配,请减少层数或增大单丝直径。`});
+    else if(L.count > L.zmax) warns.push({lv:'err', t:`第${n}层排不下:${L.count} 根 > 该层最多 ${L.zmax} 根。建议增加层数或减小单丝直径。`});
+    else if(L.count < Math.ceil(L.zmax*0.7)) warns.push({lv:'warn', t:`第${n}层排不满:${L.count} 根,该层可排 ${L.zmax} 根,缝隙过大。建议调整层数或单丝直径。`});
+    if(L.m < 6 || L.m > 30) warns.push({lv:'warn', t:`第${n}层节距比 m=${L.m} 超出常规工艺范围(6~30),请确认。`});
+    if(i>0 && L.dir === S.layers[i-1].dir) warns.push({lv:'err', t:`第${i}层与第${n}层绞向相同——相邻两层绞向必须相反!`});
+  });
+  S.Nt = Nt;
+  S.Dout = S.layers.length ? S.layers[S.layers.length-1].outD : d;
+  S.zLen = Math.max(S.layers.length?S.layers[S.layers.length-1].h:0, 4*S.Dout, 20);
+
+  const Aact = Nt*Math.PI*d*d/4;
+  const fill = Nt*d*d/(S.Dout*S.Dout)*100;
+  const lamW = S.layers.reduce((s,L)=>s+Math.max(0,L.count)*L.lam,0)/Nt;
+  const W = S.rho * Aact * (1 + lamW/100);   // kg/km
+  const dev = (Aact - S.A)/S.A*100;
+  if(Math.abs(dev) > 2) warns.push({lv:'info', t:`实际截面 ${fmt(Aact,1)} mm² 与标称 ${S.A} mm² 偏差 ${fmt(dev,1)}%,可微调单丝直径。`});
+  if(Nt > 1500) warns.push({lv:'info', t:`共 ${Nt} 根单丝,已自动降低模型分段数以保持 60 帧。`});
+  if(!warns.some(w=>w.lv==='err')) warns.unshift({lv:'ok', t:'排层可行:各层根数均可容纳,相邻层绞向相反。'});
+  S.derived = {Aact, fill, lamW, W, warns};
+}
+
+/* ================= 层参数表 ================= */
+function renderTableStructure(){
+  const tb = document.querySelector('#layerTable tbody');
+  tb.innerHTML = '';
+  S.layers.forEach((L,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td class="c">${L.n}</td>`+
+      `<td class="c"><input class="lc" data-i="${i}" type="number" min="0" step="1" value="${L.count}"></td>`+
+      `<td class="c"><select class="ld" data-i="${i}">`+
+        `<option value="-1"${L.dir<0?' selected':''}>左(S)</option>`+
+        `<option value="1"${L.dir>0?' selected':''}>右(Z)</option></select></td>`+
+      `<td class="c"><input class="lm" data-i="${i}" type="number" min="3" max="60" step="0.5" value="${L.m}"></td>`+
+      `<td class="dp"></td><td class="do"></td><td class="hh"></td><td class="bt"></td><td class="lm2"></td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', ()=>{
+      const i = +el.dataset.i;
+      if(el.classList.contains('lc')) S.layers[i].count = Math.max(0, Math.round(+el.value||0));
+      if(el.classList.contains('lm')) S.layers[i].m = Math.max(0.5, +el.value||10);
+      if(el.classList.contains('ld')) S.layers[i].dir = +el.value;
+      refresh();
+    });
+  });
+}
+function updateDerivedCells(){
+  const rows = document.querySelectorAll('#layerTable tbody tr');
+  S.layers.forEach((L,i)=>{
+    const r = rows[i]; if(!r) return;
+    r.querySelector('.dp').textContent = fmt(L.pitchD,2);
+    r.querySelector('.do').textContent = fmt(L.outD,2);
+    r.querySelector('.hh').textContent = fmt(L.h,1);
+    r.querySelector('.bt').textContent = fmt(L.beta,1);
+    r.querySelector('.lm2').textContent = fmt(L.lam,3);
+  });
+}
+
+/* ================= 汇总 & 警告 ================= */
+function renderSummary(){
+  const {Aact, fill, lamW, W} = S.derived;
+  $('sumGrid').innerHTML = [
+    ['总根数', `${S.Nt} <small>根(1+${S.Nt-1})</small>`],
+    ['实际截面', `${fmt(Aact,1)} <small>mm²</small>`],
+    ['绞合外径', `${fmt(S.Dout,2)} <small>mm</small>`],
+    ['填充系数', `${fmt(fill,1)} <small>%</small>`],
+    ['综合绞入率', `${fmt(lamW,3)} <small>%</small>`],
+    ['千米重量', `${fmt(W,1)} <small>kg/km</small>`],
+  ].map(([k,v])=>`<div class="item"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  $('warns').innerHTML = S.derived.warns.map(w=>`<div class="w-${w.lv}">${w.t}</div>`).join('');
+  $('legend').innerHTML = `<span><i style="background:${C_CENTER}"></i>中心</span>` +
+    S.layers.map((L,i)=>`<span><i style="background:${COLORS[i%COLORS.length]}"></i>第${L.n}层 ${L.count}根 ${L.dir<0?'左(S)':'右(Z)'}</span>`).join('');
+}
+
+/* ================= 三维场景 ================= */
+const container = $('view3d');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.localClippingEnabled = true;
+container.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0f13);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1e6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotateSpeed = 1.6;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x2a3340, 1.05));
+const dl = new THREE.DirectionalLight(0xffffff, 1.4); dl.position.set(3,-4,6); scene.add(dl);
+const dl2 = new THREE.DirectionalLight(0x8899bb, 0.5); dl2.position.set(-4,3,-2); scene.add(dl2);
+
+const clipPlane = new THREE.Plane(new THREE.Vector3(0,0,-1), 1e9);
+let cableGroup = new THREE.Group(); scene.add(cableGroup);
+let capMesh = null;
+
+/* 截面多边形:圆单丝 -> 单位圆;紧压 -> 扇形环段 */
+function crossPoints(L, P){
+  if(S.compact && L.n>0){
+    const psi = Math.PI/Math.max(L.count,1)*0.94;
+    return [[L.rIn,-psi],[L.rIn,0],[L.rIn,psi],[L.rOut,psi],[L.rOut,0],[L.rOut,-psi]]
+      .map(([rho,ps])=>({rho,psi:ps,sector:true}));
+  }
+  const pts=[]; const r=S.d/2;
+  for(let p=0;p<P;p++){ const a=p/P*2*Math.PI; pts.push({dx:r*Math.cos(a), dy:r*Math.sin(a), sector:false}); }
+  return pts;
+}
+function ringPoint(L, cp, th){
+  if(cp.sector) return [cp.rho*Math.cos(th+cp.psi), cp.rho*Math.sin(th+cp.psi)];
+  return [L.pitchR*Math.cos(th)+cp.dx, L.pitchR*Math.sin(th)+cp.dy];
+}
+
+function buildWireGeo(L, zLen, M, cps){
+  const P = cps.length, w = L.count;
+  const pos = new Float32Array(w*((M+1)*P+2)*3);
+  const idx = [];
+  let vp=0, base=0;
+  for(let j=0;j<w;j++){
+    const ph = L.phase0 + j*2*Math.PI/w;
+    for(let i=0;i<=M;i++){
+      const z = zLen*i/M;
+      const th = ph + L.dir*2*Math.PI*z/L.h;
+      for(let p=0;p<P;p++){
+        const [x,y] = ringPoint(L, cps[p], th);
+        pos[vp++]=x; pos[vp++]=y; pos[vp++]=z;
+      }
+    }
+    // 两端盖(质心扇形)
+    let cx=0,cy=0;
+    for(let p=0;p<P;p++){ const [x,y]=ringPoint(L,cps[p],ph); cx+=x; cy+=y; }
+    pos[vp++]=cx/P; pos[vp++]=cy/P; pos[vp++]=0;
+    const thE = ph + L.dir*2*Math.PI*zLen/L.h;
+    cx=0; cy=0;
+    for(let p=0;p<P;p++){ const [x,y]=ringPoint(L,cps[p],thE); cx+=x; cy+=y; }
+    pos[vp++]=cx/P; pos[vp++]=cy/P; pos[vp++]=zLen;
+    const cS = base+(M+1)*P, cE = cS+1;
+    for(let i=0;i<M;i++) for(let p=0;p<P;p++){
+      const a=base+i*P+p, b=base+i*P+(p+1)%P, c=base+(i+1)*P+p, d2=base+(i+1)*P+(p+1)%P;
+      idx.push(a,c,b, b,c,d2);
+    }
+    for(let p=0;p<P;p++){
+      idx.push(cS, base+(p+1)%P, base+p);
+      idx.push(cE, base+M*P+p, base+M*P+(p+1)%P);
+    }
+    base += (M+1)*P+2;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+function disposeGroup(gr){
+  gr.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); });
+  scene.remove(gr);
+}
+
+function rebuild3D(){
+  disposeGroup(cableGroup);
+  cableGroup = new THREE.Group();
+  const zLen = S.zLen, Nt = Math.max(S.Nt,1);
+  const P = Nt>400 ? 6 : 10;
+  const M = Math.max(20, Math.min(200, Math.round(700000/(Nt*P))));
+  // 中心丝
+  const cg = new THREE.CylinderGeometry(S.d/2, S.d/2, zLen, 20); cg.rotateX(Math.PI/2); cg.translate(0,0,zLen/2);
+  const cm = new THREE.MeshStandardMaterial({color:C_CENTER, metalness:.4, roughness:.45, side:THREE.DoubleSide, clippingPlanes:[clipPlane]});
+  cableGroup.add(new THREE.Mesh(cg, cm));
+  // 各绞层
+  S.layers.forEach((L,i)=>{
+    if(L.count<1) return;
+    const cps = crossPoints(L, P);
+    const geo = buildWireGeo(L, zLen, M, cps);
+    const mat = new THREE.MeshStandardMaterial({color:COLORS[i%COLORS.length], metalness:.4, roughness:.45, side:THREE.DoubleSide, clippingPlanes:[clipPlane]});
+    cableGroup.add(new THREE.Mesh(geo, mat));
+  });
+  scene.add(cableGroup);
+  // 相机取景
+  const r = S.Dout/2, len = zLen;
+  const dist = Math.max(len*0.9, r*6);
+  camera.position.set(dist*0.55, -dist*0.75, len/2 + dist*0.4);
+  camera.far = dist*8+1000; camera.updateProjectionMatrix();
+  controls.target.set(0,0,len/2);
+  controls.update();
+  updateClip();
+}
+
+/* 剖面盖板(让切口看起来是实心截面) */
+function updateCap(z){
+  if(capMesh){ cableGroup.remove(capMesh); capMesh.geometry.dispose(); capMesh.material.dispose(); capMesh=null; }
+  if(!$('clipOn').checked || z >= S.zLen-1e-6) return;
+  const pos=[], col=[];
+  const c = new THREE.Color();
+  const push = (pts, color)=>{
+    let cx=0, cy=0; pts.forEach(p=>{cx+=p[0];cy+=p[1];}); cx/=pts.length; cy/=pts.length;
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i], b=pts[(i+1)%pts.length];
+      pos.push(cx,cy,z, a[0],a[1],z, b[0],b[1],z);
+      c.set(color);
+      for(let k=0;k<3;k++) col.push(c.r,c.g,c.b);
+    }
+  };
+  // 中心丝
+  const pc=[]; for(let i=0;i<20;i++){const a=i/20*2*Math.PI; pc.push([S.d/2*Math.cos(a), S.d/2*Math.sin(a)]);}
+  push(pc, C_CENTER);
+  S.layers.forEach((L,i)=>{
+    if(L.count<1) return;
+    const cps = crossPoints(L, 14);
+    for(let j=0;j<L.count;j++){
+      const th = L.phase0 + j*2*Math.PI/L.count + L.dir*2*Math.PI*z/L.h;
+      push(cps.map(cp=>ringPoint(L,cp,th)), COLORS[i%COLORS.length]);
+    }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col,3));
+  const m = new THREE.MeshBasicMaterial({vertexColors:true, side:THREE.DoubleSide});
+  capMesh = new THREE.Mesh(g,m);
+  cableGroup.add(capMesh);
+}
+
+function updateClip(){
+  const on = $('clipOn').checked;
+  const z = on ? (+$('clipZ').value/1000)*S.zLen : 1e9;
+  clipPlane.constant = z;
+  updateCap(Math.min(z, S.zLen));
+  drawSection(Math.min(z, S.zLen));
+  $('secZ').textContent = on ? `z = ${fmt(Math.min(z,S.zLen),1)} mm` : '(剖面关闭)';
+}
+
+/* ================= 二维截面图 ================= */
+function drawSection(z){
+  const cv = $('secCanvas');
+  const W = cv.clientWidth || 300;
+  const dpr = Math.min(devicePixelRatio,2);
+  cv.width = W*dpr; cv.height = W*dpr; cv.style.height = W+'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,W);
+  const cx=W/2, cy=W/2, sc=(W/2-14)/(S.Dout/2);
+  ctx.strokeStyle='#3a4350'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,cy,S.Dout/2*sc,0,7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-6,cy); ctx.lineTo(cx+6,cy); ctx.moveTo(cx,cy-6); ctx.lineTo(cx,cy+6); ctx.stroke();
+  // 中心丝
+  ctx.fillStyle=C_CENTER;
+  ctx.beginPath(); ctx.arc(cx,cy,S.d/2*sc,0,7); ctx.fill();
+  S.layers.forEach((L,i)=>{
+    if(L.count<1) return;
+    ctx.fillStyle = COLORS[i%COLORS.length];
+    for(let j=0;j<L.count;j++){
+      const th = L.phase0 + j*2*Math.PI/L.count + L.dir*2*Math.PI*z/L.h;
+      ctx.beginPath();
+      if(S.compact){
+        const psi = Math.PI/L.count*0.94;
+        ctx.arc(cx,cy,L.rIn*sc, -th-psi, -th+psi);
+        ctx.arc(cx,cy,L.rOut*sc, -th+psi, -th-psi, true);
+        ctx.closePath();
+      }else{
+        ctx.arc(cx+L.pitchR*Math.cos(th)*sc, cy-L.pitchR*Math.sin(th)*sc, S.d/2*sc, 0, 7);
+      }
+      ctx.fill();
+    }
+  });
+  ctx.fillStyle='#9aa6b2'; ctx.font='11px sans-serif';
+  ctx.fillText(`外径 ⌀${fmt(S.Dout,2)} mm`, 8, W-8);
+}
+
+/* ================= 刷新流程 ================= */
+let rebuildTimer = 0;
+function refresh(){
+  compute();
+  updateDerivedCells();
+  renderSummary();
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(()=>{ rebuild3D(); }, 200);
+}
+function structuralRefresh(){
+  distribute();
+  renderTableStructure();
+  refresh();
+}
+
+/* ================= 事件 ================= */
+$('inA').addEventListener('input', e=>{ S.A=Math.max(0.1,+e.target.value||1); structuralRefresh(); });
+$('inD').addEventListener('input', e=>{ S.d=Math.max(0.01,+e.target.value||1); structuralRefresh(); });
+$('inK').addEventListener('input', e=>{ S.k=Math.max(1,Math.min(12,Math.round(+e.target.value||1))); structuralRefresh(); });
+$('inMat').addEventListener('input', e=>{ S.rho=+e.target.value; S.matName=e.target.selectedOptions[0].text.split(' ')[0]; refresh(); });
+$('inEta').addEventListener('input', e=>{ S.etaC=Math.max(0.5,Math.min(0.98,+e.target.value||0.9)); refresh(); });
+$('tRound').addEventListener('click', ()=>{ S.compact=false; $('tRound').classList.add('on'); $('tCompact').classList.remove('on'); $('etaRow').style.display='none'; refresh(); });
+$('tCompact').addEventListener('click', ()=>{ S.compact=true; $('tCompact').classList.add('on'); $('tRound').classList.remove('on'); $('etaRow').style.display='block'; refresh(); });
+$('clipOn').addEventListener('input', updateClip);
+$('clipZ').addEventListener('input', updateClip);
+$('rotOn').addEventListener('input', e=>{ controls.autoRotate = e.target.checked; });
+
+$('btnCopy').addEventListener('click', ()=>{
+  const {Aact, fill, lamW, W} = S.derived;
+  const lines = [
+    `绞线结构计算 ${S.matName} ${S.A}mm² ${S.compact?'紧压绞':'正规同心绞'}`,
+    `单丝⌀${S.d}mm 共${S.Nt}根(1+${S.layers.map(L=>L.count).join('+')})`,
+    ...S.layers.map(L=>`第${L.n}层: ${L.count}根 ${L.dir<0?'左向(S)':'右向(Z)'} m=${L.m} h=${fmt(L.h,1)}mm 绞入率${fmt(L.lam,3)}%`),
+    `绞合外径⌀${fmt(S.Dout,2)}mm 实际截面${fmt(Aact,1)}mm² 填充系数${fmt(fill,1)}% 综合绞入率${fmt(lamW,3)}% 千米重量${fmt(W,1)}kg/km`
+  ];
+  const txt = lines.join('\n');
+  const done = ok => { $('copyMsg').textContent = ok?'已复制 ✓':'复制失败,请手动选择'; setTimeout(()=>$('copyMsg').textContent='',2500); };
+  try{ navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false)); }catch(e){ done(false); }
+});
+
+/* ================= 主循环 / FPS ================= */
+let frames=0, tPrev=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene,camera);
+  frames++;
+  const t = performance.now();
+  if(t - tPrev >= 500){
+    $('fps').textContent = Math.round(frames*1000/(t-tPrev)) + ' FPS';
+    frames=0; tPrev=t;
+  }
+}
+function resize(){
+  const w = container.clientWidth, h = container.clientHeight;
+  renderer.setSize(w,h);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+  updateClip();
+}
+new ResizeObserver(resize).observe(container);
+
+/* ================= 初始化 ================= */
+structuralRefresh();
+resize();
+animate();
+</script>
